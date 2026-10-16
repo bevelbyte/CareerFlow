@@ -13,6 +13,7 @@
 //!     sweep — the agent loop is the only writer.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection, OptionalExtension};
 
@@ -39,7 +40,7 @@ const ALLOWED_PHASES: &[&str] = &[
 const ALLOWED_STATES: &[&str] = &["running", "paused", "completed", "failed", "cancelled"];
 const ALLOWED_RECOVERY: &[&str] = &["safe-resume", "requires-user", "stale"];
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmRunState {
     pub id: i32,
     pub profile_id: i32,
@@ -77,7 +78,7 @@ fn assert_owned(conn: &Connection, profile_id: i32, agent_id: i32) -> Result<()>
 /// Insert or update a run-state row. The agent loop calls this on every
 /// state transition. The (profile_id, agent_id) pair is the primary key
 /// — re-issuing the call with new state/phase updates the row in place.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_upsert_run_state(
     profile_id: i32,
     agent_id: i32,
@@ -159,7 +160,7 @@ pub fn pm_upsert_run_state(
 
 /// Delete the run-state row for an agent. Called by the loop on terminal
 /// completion (so the sweep sees a clean slate).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_delete_run_state(profile_id: i32, agent_id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let agent_id = valid_id(agent_id, "agent_id")?;
@@ -186,7 +187,7 @@ pub fn pm_delete_run_state(profile_id: i32, agent_id: i32) -> Result<()> {
 /// `stale_after_minutes` (default 30) are returned with a synthetic
 /// `recovery = 'stale'` to the caller (we never mutate them in this
 /// endpoint — the sweep can decide what to do).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_resumable_runs(
     profile_id: i32,
     stale_after_minutes: Option<i32>,
@@ -247,7 +248,7 @@ pub fn pm_list_resumable_runs(
 /// List STALE rows (older than `stale_after_minutes`). The sweep uses
 /// these to clean up after a crashed Electron that never finished
 /// write transactions for stale rows.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_stale_runs(
     profile_id: i32,
     stale_after_minutes: Option<i32>,
@@ -303,7 +304,7 @@ pub fn pm_list_stale_runs(
 }
 
 /// Single-row fetch (profile ownership gated).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_run_state(profile_id: i32, agent_id: i32) -> Result<Option<PmRunState>> {
     let profile_id = valid_profile_id(profile_id)?;
     let agent_id = valid_id(agent_id, "agent_id")?;

@@ -1,6 +1,9 @@
 #![deny(clippy::all)]
+// Without Node registration, the addon-only API surface appears unused to rustc.
+#![cfg_attr(not(feature = "node"), allow(dead_code))]
 
 #[macro_use]
+#[cfg(feature = "node")]
 extern crate napi_derive;
 
 mod cgpa;
@@ -26,9 +29,10 @@ pub mod validate;
 /// exercise the SQL boundary without going through napi serialization.
 pub use db::focus_signals::{get_focus_signals, FocusSignals};
 
+#[cfg(feature = "node")]
 use napi_derive::napi;
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn ping() -> String {
     "CareerFlow core online".to_string()
 }

@@ -14,6 +14,7 @@
 //! a summary, not a replacement for them.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::params;
 use rusqlite::OptionalExtension;
@@ -24,7 +25,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::valid_id;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SubjectOverview {
     pub subject_id: i32,
     pub name: String,
@@ -57,7 +58,7 @@ pub struct SubjectOverview {
 }
 
 /// Assemble the workspace overview for a single subject.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_subject_overview(profile_id: i32, subject_id: i32) -> Result<SubjectOverview> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;

@@ -1,7 +1,7 @@
 //! Structured, machine-readable error envelope shared between the Rust core and
 //! the Svelte UI.
 //!
-//! Every `Result`-returning `#[napi]` function should fail with one of these so
+//! Every `Result`-returning `#[cfg_attr(feature = "node", napi)]` function should fail with one of these so
 //! the renderer's toast layer can map a stable `code` -> friendly, localized
 //! copy (instead of dumping a raw Rust string into an `alert()`).
 //!

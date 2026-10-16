@@ -4,6 +4,7 @@
 //! extracted text for search, and FTS5-powered keyword search.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 use std::path::{Path, PathBuf};
@@ -15,7 +16,7 @@ use crate::db::{attach_root, to_err, with_db, with_transaction};
 use crate::errors::{coded, codes};
 use crate::validate::{required_text, valid_id, MAX_BLOB, MAX_NAME, MAX_PATH};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ResourceMeta {
     pub id: i32,
     pub subject_id: i32,
@@ -29,7 +30,7 @@ pub struct ResourceMeta {
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Resource {
     pub id: i32,
     pub subject_id: i32,
@@ -43,7 +44,7 @@ pub struct Resource {
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SearchHit {
     pub id: i32,
     pub subject_id: i32,
@@ -104,7 +105,7 @@ pub(crate) fn ensure_attachment_profile_dir(root: &Path, profile_id: i32) -> Res
 
 // ===== Resource CRUD =====
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn list_resources(profile_id: i32, subject_id: i32) -> Result<Vec<ResourceMeta>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     with_db(|conn| {
@@ -139,7 +140,7 @@ pub fn list_resources(profile_id: i32, subject_id: i32) -> Result<Vec<ResourceMe
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_resource(profile_id: i32, id: i32) -> Result<Resource> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let id = valid_id(id, "id")?;
@@ -174,7 +175,7 @@ pub fn get_resource(profile_id: i32, id: i32) -> Result<Resource> {
 
 /// Add a note. `profile_id` is the caller's profile; the subject must
 /// belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_note(profile_id: i32, subject_id: i32, title: String, content: String) -> Result<i32> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;
@@ -194,7 +195,7 @@ pub fn add_note(profile_id: i32, subject_id: i32, title: String, content: String
 
 /// Update a note. `profile_id` is the caller's profile; the row's subject
 /// must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_note(profile_id: i32, id: i32, title: String, content: String) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -222,7 +223,7 @@ pub fn update_note(profile_id: i32, id: i32, title: String, content: String) -> 
 }
 
 /// Delete a resource. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_resource(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -256,7 +257,7 @@ pub fn delete_resource(profile_id: i32, id: i32) -> Result<()> {
 /// here is the `subject_id`. We verify the subject exists and belongs to a
 /// real track/profile chain BEFORE we copy any bytes, so a renderer
 /// compromise cannot write into another profile's subject directory.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn attach_file(profile_id: i32, subject_id: i32, title: String, source_path: String) -> Result<i32> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;
@@ -388,7 +389,7 @@ fn assert_resource_subject_owned_by(
 
 // ===== FTS5 Search =====
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn search_resources(profile_id: i32, query: String) -> Result<Vec<SearchHit>> {
     with_db(|conn| {
         let match_q = format!("\"{}\"*", query.replace('"', "\"\""));
@@ -430,7 +431,7 @@ pub fn search_resources(profile_id: i32, query: String) -> Result<Vec<SearchHit>
 
 // ===== Dashboard Stats =====
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ActivityItem {
     pub kind: String,
     pub title: String,
@@ -438,14 +439,14 @@ pub struct ActivityItem {
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct StatusBreakdown {
     pub pending: i32,
     pub in_progress: i32,
     pub done: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct DashboardStats {
     pub track_count: i32,
     pub semester_count: i32,
@@ -460,7 +461,7 @@ pub struct DashboardStats {
     pub recent: Vec<ActivityItem>,
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_dashboard_stats(profile_id: i32) -> Result<DashboardStats> {
     with_db(|conn| {
         // Basic counts
@@ -695,7 +696,7 @@ pub fn get_dashboard_stats(profile_id: i32) -> Result<DashboardStats> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn cleanup_orphan_attachments() -> Result<()> {
     with_db(|conn| {
         let mut stmt = conn

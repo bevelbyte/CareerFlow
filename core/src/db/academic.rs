@@ -4,6 +4,7 @@
 //! curriculum into a hierarchical tree.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::params;
 
@@ -14,7 +15,7 @@ use crate::validate::{
 };
 
 /// Mirrors the `profiles` table. napi camelCases -> { id, name, slug, createdAt }.
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Profile {
     pub id: i32,
     pub name: String,
@@ -22,7 +23,7 @@ pub struct Profile {
     pub created_at: String,
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_profiles() -> Result<Vec<Profile>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -49,7 +50,7 @@ pub fn get_profiles() -> Result<Vec<Profile>> {
 
 /// Insert a profile; returns the created row so the UI can append without a refetch.
 /// Fails clearly if the slug already exists (UNIQUE constraint).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_profile(name: String, slug: String) -> Result<Profile> {
     let name = required_text(name, "name", MAX_NAME)?;
     let slug = required_text(slug, "slug", MAX_SLUG)?;
@@ -82,7 +83,7 @@ pub fn add_profile(name: String, slug: String) -> Result<Profile> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_profile(id: i32) -> Result<()> {
     with_db(|conn| {
         conn.execute("DELETE FROM profiles WHERE id = ?1", params![id])
@@ -93,7 +94,7 @@ pub fn delete_profile(id: i32) -> Result<()> {
 
 // ===== Academic hierarchy types =====
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SubjectNode {
     pub id: i32,
     pub milestone_id: i32,
@@ -102,7 +103,7 @@ pub struct SubjectNode {
     pub code: Option<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct MilestoneNode {
     pub id: i32,
     pub semester_id: i32,
@@ -110,7 +111,7 @@ pub struct MilestoneNode {
     pub subjects: Vec<SubjectNode>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterNode {
     pub id: i32,
     pub track_id: i32,
@@ -121,7 +122,7 @@ pub struct SemesterNode {
     pub milestones: Vec<MilestoneNode>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct TrackNode {
     pub id: i32,
     pub name: String,
@@ -129,7 +130,7 @@ pub struct TrackNode {
 }
 
 /// Fetch one profile's full Track -> Semester -> Milestone -> Subject tree.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_academic_tree(profile_id: i32) -> Result<Vec<TrackNode>> {
     with_db(|conn| {
         use std::collections::HashMap;
@@ -265,7 +266,7 @@ pub fn get_academic_tree(profile_id: i32) -> Result<Vec<TrackNode>> {
 
 // ===== Academic hierarchy CRUD =====
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_track(profile_id: i32, name: String) -> Result<i32> {
     let profile_id = valid_profile_id(profile_id)?;
     let name = required_text(name, "name", MAX_NAME)?;
@@ -279,7 +280,7 @@ pub fn add_track(profile_id: i32, name: String) -> Result<i32> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_semester(profile_id: i32, track_id: i32, name: String) -> Result<i32> {
     let profile_id = valid_profile_id(profile_id)?;
     let track_id = valid_id(track_id, "track_id")?;
@@ -312,7 +313,7 @@ pub fn add_semester(profile_id: i32, track_id: i32, name: String) -> Result<i32>
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_milestone(profile_id: i32, semester_id: i32, title: String) -> Result<i32> {
     let profile_id = valid_profile_id(profile_id)?;
     let semester_id = valid_id(semester_id, "semester_id")?;
@@ -337,7 +338,7 @@ pub fn add_milestone(profile_id: i32, semester_id: i32, title: String) -> Result
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_subject(
     profile_id: i32,
     milestone_id: i32,
@@ -368,7 +369,7 @@ pub fn add_subject(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_subject(profile_id: i32, id: i32, name: String, code: Option<String>) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let id = crate::validate::valid_id(id, "id")?;
@@ -386,7 +387,7 @@ pub fn update_subject(profile_id: i32, id: i32, name: String, code: Option<Strin
 
 // ===== Delete nodes (children cascade automatically) =====
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_track(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let row_id = valid_id(id, "id")?;
@@ -407,7 +408,7 @@ pub fn delete_track(profile_id: i32, id: i32) -> Result<()> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_semester(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let row_id = valid_id(id, "id")?;
@@ -424,7 +425,7 @@ pub fn delete_semester(profile_id: i32, id: i32) -> Result<()> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_milestone(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let row_id = valid_id(id, "id")?;
@@ -441,7 +442,7 @@ pub fn delete_milestone(profile_id: i32, id: i32) -> Result<()> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_subject(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let row_id = valid_id(id, "id")?;
@@ -460,7 +461,7 @@ pub fn delete_subject(profile_id: i32, id: i32) -> Result<()> {
 
 /// Update a subject's status. Allowlist mirrors the UI dropdown so an
 /// out-of-band status string can never silently land in the DB.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_subject_status(profile_id: i32, id: i32, status: String) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let row_id = valid_id(id, "id")?;
@@ -478,7 +479,7 @@ pub fn set_subject_status(profile_id: i32, id: i32, status: String) -> Result<()
 /// Update a semester's user-declared status (Upcoming | In Progress | Completed).
 /// This is the student's declaration; it is intentionally independent of course
 /// marks and never recomputed from them.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_semester_status(profile_id: i32, id: i32, status: String) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let id = valid_id(id, "id")?;

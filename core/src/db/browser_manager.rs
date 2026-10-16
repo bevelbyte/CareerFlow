@@ -11,6 +11,7 @@
 //! directory and must never be exported as portable data.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, OptionalExtension};
 
@@ -48,7 +49,7 @@ fn validate_shortcut_url(input: &str) -> Result<String> {
     Ok(parsed.into())
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct BrowserProfileRecord {
     pub local_id: String,
     pub cf_profile_id: i32,
@@ -59,7 +60,7 @@ pub struct BrowserProfileRecord {
     pub last_used_at: Option<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct BrowserShortcutRecord {
     pub id: i32,
     pub browser_profile_id: String,
@@ -103,7 +104,7 @@ fn row_to_shortcut(row: &rusqlite::Row) -> rusqlite::Result<BrowserShortcutRecor
 }
 
 /// List a CareerFlow profile's managed browser profiles in stable order.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn list_browser_profiles(cf_profile_id: i32) -> Result<Vec<BrowserProfileRecord>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -214,7 +215,7 @@ fn get_browser_profile_internal(local_id: String) -> Result<Option<BrowserProfil
 /// the call is treated as a non-existent row from the caller's perspective
 /// (the main process and renderer must not be able to discover rows owned
 /// by other profiles).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_browser_profile(
     cf_profile_id: i32,
     local_id: String,
@@ -240,7 +241,7 @@ pub fn get_browser_profile(
 /// caller (renderer never sees it; it is an opaque key) and becomes the
 /// machine-local binding key used by the Donut transport layer. The supplied
 /// `cf_profile_id` MUST exist in `profiles`; any other id is rejected.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_browser_profile(
     cf_profile_id: i32,
     local_id: String,
@@ -296,7 +297,7 @@ pub fn add_browser_profile(
 
 /// Rename a managed browser profile. The supplied cf_profile_id must own the
 /// target row; otherwise the call is rejected without mutating it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn rename_browser_profile(
     cf_profile_id: i32,
     local_id: String,
@@ -329,7 +330,7 @@ pub fn rename_browser_profile(
 
 /// Enable/disable a managed browser profile. Disabled profiles stay visible
 /// for management but refuse opens at the service boundary. Ownership-checked.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_browser_profile_enabled(
     cf_profile_id: i32,
     local_id: String,
@@ -357,7 +358,7 @@ pub fn set_browser_profile_enabled(
 /// Mark usage: bump last_used_at to now (called after a successful open).
 /// Ownership-checked — the caller (main-process open pipeline) supplies the
 /// resolved cf_profile_id and the bump is bound to the right owner.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn touch_browser_profile(cf_profile_id: i32, local_id: String) -> Result<()> {
     assert_browser_profile_owned(local_id.clone(), cf_profile_id)?;
     let ts = now_iso();
@@ -383,7 +384,7 @@ pub fn touch_browser_profile(cf_profile_id: i32, local_id: String) -> Result<()>
 /// profile itself is intentionally NOT touched here — unlinking is a
 /// CareerFlow bookkeeping operation, not a destructive Donut action.
 /// Ownership-checked so a foreign renderer cannot wipe another profile's row.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_browser_profile(cf_profile_id: i32, local_id: String) -> Result<()> {
     assert_browser_profile_owned(local_id.clone(), cf_profile_id)?;
     with_db(|conn| {
@@ -407,7 +408,7 @@ pub fn delete_browser_profile(cf_profile_id: i32, local_id: String) -> Result<()
 /// Persist an explicit ordering for a CareerFlow profile's browser profiles.
 /// Every id must belong to the supplied cf_profile_id; the whole batch is
 /// rejected otherwise. No silent reordering of foreign rows.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn reorder_browser_profiles(cf_profile_id: i32, ordered_local_ids: Vec<String>) -> Result<()> {
     assert_cf_profile_exists(cf_profile_id)?;
     with_transaction(|conn| {
@@ -450,7 +451,7 @@ pub fn reorder_browser_profiles(cf_profile_id: i32, ordered_local_ids: Vec<Strin
 
 /// Fetch one shortcut by id (used by the main-process open pipeline to
 /// resolve ownership before any Donut call).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_browser_shortcut(id: i32) -> Result<Option<BrowserShortcutRecord>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -476,7 +477,7 @@ pub fn get_browser_shortcut(id: i32) -> Result<Option<BrowserShortcutRecord>> {
 /// owned by a different CareerFlow profile, the listing is empty (never
 /// an error). Reads must never leak a "row exists but you don't own it"
 /// signal — that's a write-side concern, not a read-side one.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn list_browser_shortcuts(
     cf_profile_id: i32,
     browser_profile_id: String,
@@ -520,7 +521,7 @@ pub fn list_browser_shortcuts(
 /// STORAGE time: defense in depth with the open-time validation. The target
 /// browser profile must belong to the supplied cf_profile_id; otherwise
 /// rejected without inserting anything.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_browser_shortcut(
     cf_profile_id: i32,
     browser_profile_id: String,
@@ -582,7 +583,7 @@ pub fn add_browser_shortcut(
 
 /// Update a shortcut's label and URL. The shortcut must belong to a browser
 /// profile owned by the supplied cf_profile_id; the URL is re-validated.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_browser_shortcut(
     cf_profile_id: i32,
     id: i32,
@@ -624,7 +625,7 @@ pub fn update_browser_shortcut(
 }
 
 /// Delete a shortcut. Ownership flows through the parent browser profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_browser_shortcut(cf_profile_id: i32, id: i32) -> Result<()> {
     let owner = shortcut_owner_profile(id)?;
     if owner != cf_profile_id {
@@ -656,7 +657,7 @@ pub fn delete_browser_shortcut(cf_profile_id: i32, id: i32) -> Result<()> {
 /// Persist an explicit ordering for a browser profile's shortcuts. The
 /// parent browser profile must belong to the supplied cf_profile_id AND
 /// every shortcut id must belong to that browser profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn reorder_browser_shortcuts(
     cf_profile_id: i32,
     browser_profile_id: String,
@@ -706,7 +707,7 @@ pub fn reorder_browser_shortcuts(
 /// `cf_profile_id`. No mutation when the parent is owned by a different
 /// CareerFlow profile, and no Donut transport is involved — the pin is a
 /// pure local UI concern.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn toggle_browser_shortcut_pin(
     cf_profile_id: i32,
     shortcut_id: i32,
@@ -749,7 +750,7 @@ pub fn toggle_browser_shortcut_pin(
 /// not exposed to the renderer as a generic `list all` — the panel only
 /// needs the pinned subset, and the index `idx_browser_shortcuts_pinned`
 /// keeps this an O(pinned) read regardless of total shortcut count.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn list_pinned_browser_shortcuts(cf_profile_id: i32) -> Result<Vec<BrowserShortcutRecord>> {
     assert_cf_profile_exists(cf_profile_id)?;
     with_db(|conn| {

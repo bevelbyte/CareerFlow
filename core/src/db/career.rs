@@ -5,6 +5,7 @@
 
 use crate::errors::{coded, codes};
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, OptionalExtension};
 
@@ -13,7 +14,7 @@ use crate::validate::{
     profile_id as valid_profile_id, required_text, text, valid_id, MAX_NAME, MAX_TEXT,
 };
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct CareerGoal {
     pub id: i32,
     pub profile_id: i32,
@@ -28,7 +29,7 @@ pub struct CareerGoal {
     pub updated_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct CareerMilestone {
     pub id: i32,
     pub goal_id: i32,
@@ -52,7 +53,7 @@ fn valid_status(s: &str) -> bool {
 
 /// Create a career goal. If `is_primary`, it becomes the profile's sole primary
 /// goal (any previous primary is demoted) — one primary per profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_career_goal(
     profile_id: i32,
     title: String,
@@ -87,7 +88,7 @@ pub fn add_career_goal(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_career_goals(profile_id: i32) -> Result<Vec<CareerGoal>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -123,7 +124,7 @@ pub fn get_career_goals(profile_id: i32) -> Result<Vec<CareerGoal>> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_career_goal(
     profile_id: i32,
     id: i32,
@@ -177,7 +178,7 @@ pub fn update_career_goal(
 }
 
 /// Make one goal the profile's primary; demote all others for that profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_primary_career_goal(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -210,7 +211,7 @@ pub fn set_primary_career_goal(profile_id: i32, id: i32) -> Result<()> {
 
 /// Delete a career goal. `profile_id` is the caller's profile; the function
 /// refuses to delete rows owned by another profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_career_goal(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -235,7 +236,7 @@ pub fn delete_career_goal(profile_id: i32, id: i32) -> Result<()> {
 
 /// Append a milestone to a goal (sort_order = current max + 1). `profile_id`
 /// is the caller's profile; the goal must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_career_milestone(
     profile_id: i32,
     goal_id: i32,
@@ -280,7 +281,7 @@ pub fn add_career_milestone(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_career_milestones(profile_id: i32, goal_id: i32) -> Result<Vec<CareerMilestone>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let goal_id = valid_id(goal_id, "goal_id")?;
@@ -336,7 +337,7 @@ pub fn get_career_milestones(profile_id: i32, goal_id: i32) -> Result<Vec<Career
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_career_milestone(
     profile_id: i32,
     id: i32,
@@ -371,7 +372,7 @@ pub fn update_career_milestone(
 
 /// Mark a milestone complete (stamp completed_at with local datetime) or reopen
 /// it (clear completed_at). Mirrors deadline completion semantics.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_career_milestone_completion(profile_id: i32, id: i32, completed: bool) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -408,7 +409,7 @@ pub fn set_career_milestone_completion(profile_id: i32, id: i32, completed: bool
 /// the caller's profile; the goal must belong to it, and every id in
 /// `ordered_ids` must belong to the same goal (otherwise the goal_id check
 /// would be meaningless).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn reorder_career_milestones(
     profile_id: i32,
     goal_id: i32,
@@ -471,7 +472,7 @@ pub fn reorder_career_milestones(
 /// Delete a career milestone. `profile_id` is the caller's profile; the
 /// function refuses to delete rows whose owning goal belongs to another
 /// profile. Resolves the milestone's goal -> profile before acting.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_career_milestone(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -501,7 +502,7 @@ pub fn delete_career_milestone(profile_id: i32, id: i32) -> Result<()> {
 /// connections (belt-and-braces: we never want a code path to silently corrupt
 /// due to a future PRAGMA misconfiguration). `profile_id` is the caller's
 /// profile; the milestone's owning goal must match.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_career_milestone_project(
     profile_id: i32,
     milestone_id: i32,
@@ -591,7 +592,7 @@ pub fn set_career_milestone_project(
 /// is None, clears the link. Cross-profile ownership is enforced defensively
 /// at the domain layer; see `set_career_milestone_project` for the rationale.
 /// `profile_id` is the caller's profile; the milestone's owning goal must match.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_career_milestone_subject(
     profile_id: i32,
     milestone_id: i32,

@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -14,7 +15,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::{bounded_text, enum_value, required_text, valid_id, MAX_TEXT};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Mistake {
     pub id: i32,
     pub subject_id: i32,
@@ -26,7 +27,7 @@ pub struct Mistake {
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct MistakeStats {
     pub total_mistakes: i32,
     pub by_type: HashMap<String, i32>,
@@ -34,7 +35,7 @@ pub struct MistakeStats {
     pub top_3_types: Vec<MistakeTypeCount>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct MistakeTypeCount {
     pub mistake_type: String,
     pub count: i32,
@@ -43,7 +44,7 @@ pub struct MistakeTypeCount {
 /// Add a mistake. `profile_id` is the caller's profile; the subject must
 /// belong to it. A renderer that supplies another profile's subject_id
 /// is rejected at the boundary, not via a post-hoc FK violation.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_mistake(
     profile_id: i32,
     subject_id: i32,
@@ -86,7 +87,7 @@ pub fn add_mistake(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_mistakes(
     profile_id: i32,
     subject_id: Option<i32>,
@@ -157,7 +158,7 @@ pub fn get_mistakes(
 
 /// Update a mistake. `profile_id` is the caller's profile; the row's
 /// subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_mistake(
     profile_id: i32,
     mistake_id: i32,
@@ -211,7 +212,7 @@ pub fn update_mistake(
 }
 
 /// Delete a mistake. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_mistake(profile_id: i32, mistake_id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let mistake_id = valid_id(mistake_id, "mistake_id")?;
@@ -261,7 +262,7 @@ fn assert_mistake_subject_owned_by(
     Ok(())
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_mistake_stats(profile_id: i32) -> Result<MistakeStats> {
     with_db(|conn| {
         // Total mistakes

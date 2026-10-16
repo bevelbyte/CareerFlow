@@ -4,6 +4,7 @@
 //! marking a primary link and opening them in the browser.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -11,7 +12,7 @@ use crate::db::{to_err, with_db, with_transaction};
 use crate::errors::{coded, codes};
 use crate::validate::valid_id;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SubjectLink {
     pub id: i32,
     pub subject_id: i32,
@@ -22,7 +23,7 @@ pub struct SubjectLink {
 }
 
 /// Get all bookmarks/links for a subject (e.g. Wikipedia, YouTube, NPTEL).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_subject_links(profile_id: i32, subject_id: i32) -> Result<Vec<SubjectLink>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;
@@ -61,7 +62,7 @@ pub fn get_subject_links(profile_id: i32, subject_id: i32) -> Result<Vec<Subject
 
 /// Add a bookmark link to a subject. `profile_id` is the caller's profile;
 /// the subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_subject_link(
     profile_id: i32,
     subject_id: i32,
@@ -83,7 +84,7 @@ pub fn add_subject_link(
 
 /// Update a link's label and URL. `profile_id` is the caller's profile;
 /// the link's subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_subject_link(
     profile_id: i32,
     link_id: i32,
@@ -120,7 +121,7 @@ pub fn update_subject_link(
 }
 
 /// Delete a subject link. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_subject_link(profile_id: i32, link_id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let link_id = valid_id(link_id, "link_id")?;
@@ -150,7 +151,7 @@ pub fn delete_subject_link(profile_id: i32, link_id: i32) -> Result<()> {
 /// Set a link as the primary (main research URL) for its subject.
 /// `profile_id` is the caller's profile; the subject must belong to it.
 /// Clears is_primary on other links for the same subject first.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_primary_link(profile_id: i32, subject_id: i32, link_id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;

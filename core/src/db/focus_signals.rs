@@ -21,6 +21,7 @@
 //! "inactivity / recency" thresholds so this layer stays dumb.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::params;
 
@@ -39,7 +40,7 @@ const SESSIONS_CAP: i32 = 500;
 /// algorithm already filters by date window, but we cap to keep IPC cheap.
 const DEADLINES_CAP: i32 = 500;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusSubject {
     pub id: i32,
     pub name: String,
@@ -47,7 +48,7 @@ pub struct FocusSubject {
     pub status: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusDeadline {
     pub id: i32,
     pub subject_id: i32,
@@ -57,25 +58,25 @@ pub struct FocusDeadline {
     pub completed_at: Option<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusSession {
     pub subject_id: i32,
     pub started_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusCard {
     pub subject_id: i32,
     pub due_date: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusMistake {
     pub subject_id: i32,
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusSignals {
     pub subjects: Vec<FocusSubject>,
     pub deadlines: Vec<FocusDeadline>,
@@ -99,7 +100,7 @@ pub struct FocusSignals {
 /// Deadlines are NOT date-filtered here: the algorithm applies its own
 /// "overdue / today / soon / later / ignore" rules. Filtering too early
 /// would silently drop future deadlines the algorithm wants to count.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_focus_signals(profile_id: i32) -> Result<FocusSignals> {
     with_db(|conn| {
         // E2E runs pin Chromium/JS to UTC so date fixtures are deterministic.

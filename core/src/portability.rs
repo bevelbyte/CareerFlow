@@ -1050,7 +1050,7 @@ fn import_v1(
     conn: &Connection,
     manifest: &Value,
     attachments: &HashMap<String, Vec<u8>>,
-    root: Option<&Path>,
+    _root: Option<&Path>,
 ) -> Result<ImportOutcome> {
     let (base_name, base_slug) = base_profile_fields(manifest);
     let final_slug = resolve_slug(conn, &base_slug)?;

@@ -18,7 +18,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 
 use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
-use crate::validate::{profile_id as valid_profile_id, text, valid_id, MAX_NAME};
+use crate::validate::{profile_id as valid_profile_id, text, valid_id};
 
 const MAX_ROLE: usize = 64;
 const MAX_PHASE: usize = 32;

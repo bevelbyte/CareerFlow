@@ -9,8 +9,8 @@ use rusqlite::params;
 
 use crate::db::{to_err, with_db};
 use crate::validate::{
-    enum_value, profile_id as valid_profile_id, required_text, text, valid_id, MAX_CATEGORY,
-    MAX_CODE, MAX_NAME, MAX_SLUG, MAX_TEXT,
+    enum_value, profile_id as valid_profile_id, required_text, text, valid_id, MAX_CODE, MAX_NAME,
+    MAX_SLUG,
 };
 
 /// Mirrors the `profiles` table. napi camelCases -> { id, name, slug, createdAt }.

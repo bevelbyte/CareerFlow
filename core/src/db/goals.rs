@@ -24,10 +24,7 @@ use crate::validate::{
 
 const MAX_OBJECTIVE: usize = 8_000;
 const MAX_REASON: usize = 2_000;
-const MAX_KIND: usize = 32;
-const MAX_PRIORITY: usize = 16;
 const MAX_STATE: usize = 32;
-const MAX_EVENT: usize = 32;
 const MAX_EVENT_MSG: usize = 4_000;
 
 const ALLOWED_KINDS: &[&str] = &["code_change", "research", "analysis"];

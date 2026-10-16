@@ -7,7 +7,7 @@
 //! — they do not try to validate semantics (the SQL layer enforces FK +
 //! unique constraints), only shape: length, control chars, sign.
 //!
-//! All helpers return `Result<T>` so they compose into any `#[napi]`
+//! All helpers return `Result<T>` so they compose into any `#[cfg_attr(feature = "node", napi)]`
 //! function with `?`. On failure they emit an `INVALID_INPUT` coded error
 //! with a stable message that the UI's error mapping layer recognises.
 //!

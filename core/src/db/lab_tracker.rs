@@ -4,6 +4,7 @@
 //! and viva examination results.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -11,7 +12,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::{required_text, text, valid_id, MAX_NAME, MAX_TEXT};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct LabExperiment {
     pub id: i32,
     pub subject_id: i32,
@@ -24,7 +25,7 @@ pub struct LabExperiment {
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct LabSummary {
     pub total: i32,
     pub records_submitted: i32,
@@ -35,7 +36,7 @@ pub struct LabSummary {
 
 /// Add an experiment. `profile_id` is the caller's profile; the subject must
 /// belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_experiment(
     profile_id: i32,
     subject_id: i32,
@@ -56,7 +57,7 @@ pub fn add_experiment(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_experiments(profile_id: i32, subject_id: i32) -> Result<Vec<LabExperiment>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;
@@ -101,7 +102,7 @@ pub fn get_experiments(profile_id: i32, subject_id: i32) -> Result<Vec<LabExperi
 
 /// Update an experiment. `profile_id` is the caller's profile; the row's
 /// subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_experiment(
     profile_id: i32,
     id: i32,
@@ -149,7 +150,7 @@ pub fn update_experiment(
 }
 
 /// Delete an experiment. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_experiment(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -176,7 +177,7 @@ pub fn delete_experiment(profile_id: i32, id: i32) -> Result<()> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_lab_summary(profile_id: i32) -> Result<LabSummary> {
     with_db(|conn| {
         let mut stmt = conn

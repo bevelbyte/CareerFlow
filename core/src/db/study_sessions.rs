@@ -7,6 +7,7 @@
 //! (what they have) and marks (how they scored).
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -14,7 +15,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::{text, valid_id, MAX_TEXT};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct StudySession {
     pub id: i32,
     pub subject_id: i32,
@@ -25,7 +26,7 @@ pub struct StudySession {
     pub notes: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct StudySessionStats {
     pub total_sessions: i32,
     pub total_minutes: i32,
@@ -39,7 +40,7 @@ pub struct StudySessionStats {
 /// / `ended_at` are ISO strings supplied by the shell (local clock); when
 /// omitted the DB default timestamps the row.
 /// `profile_id` is the caller's profile; the subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_study_session(
     profile_id: i32,
     subject_id: i32,
@@ -87,7 +88,7 @@ pub fn add_study_session(
 }
 
 /// Recent study sessions for a profile, newest first (bounded by `limit`).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_study_sessions(profile_id: i32, limit: Option<i32>) -> Result<Vec<StudySession>> {
     let cap = limit.unwrap_or(50).clamp(1, 500);
     with_db(|conn| {
@@ -126,7 +127,7 @@ pub fn get_study_sessions(profile_id: i32, limit: Option<i32>) -> Result<Vec<Stu
 }
 
 /// Delete a study session. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_study_session(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -180,7 +181,7 @@ fn assert_session_subject_owned_by(
 }
 
 /// Aggregate study-time stats for a profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_study_session_stats(profile_id: i32) -> Result<StudySessionStats> {
     with_db(|conn| {
         let base = "FROM session_states ss

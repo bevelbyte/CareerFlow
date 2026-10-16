@@ -14,6 +14,7 @@
 //! profile.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection, OptionalExtension};
 
@@ -27,7 +28,7 @@ const MAX_OBJECTIVE: usize = 4_000;
 const MAX_CONFIG_JSON: usize = 16_000;
 const MAX_MESSAGE_CONTENT: usize = 200_000;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmProject {
     pub id: i32,
     pub profile_id: i32,
@@ -39,7 +40,7 @@ pub struct PmProject {
     pub updated_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmAgent {
     pub id: i32,
     pub project_id: i32,
@@ -54,7 +55,7 @@ pub struct PmAgent {
     pub parent_agent_id: Option<i32>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmMessage {
     pub id: i32,
     pub agent_id: i32,
@@ -72,7 +73,7 @@ pub struct PmMessage {
 
 /// Create a Project Mode project. `root_path` is validated for shape; the
 /// agent's tools enforce path-inside-root at the tool boundary.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_create_project(
     profile_id: i32,
     name: String,
@@ -110,7 +111,7 @@ pub fn pm_create_project(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_projects(profile_id: i32) -> Result<Vec<PmProject>> {
     let profile_id = valid_profile_id(profile_id)?;
     with_db(|conn| {
@@ -142,7 +143,7 @@ pub fn pm_list_projects(profile_id: i32) -> Result<Vec<PmProject>> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_project(profile_id: i32, project_id: i32) -> Result<PmProject> {
     let profile_id = valid_profile_id(profile_id)?;
     let project_id = valid_id(project_id, "project_id")?;
@@ -172,7 +173,7 @@ pub fn pm_get_project(profile_id: i32, project_id: i32) -> Result<PmProject> {
 
 /// Delete a Project Mode project. Cascades to pm_agents / pm_messages via
 /// the schema's ON DELETE CASCADE.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_delete_project(profile_id: i32, project_id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let project_id = valid_id(project_id, "project_id")?;
@@ -197,7 +198,7 @@ pub fn pm_delete_project(profile_id: i32, project_id: i32) -> Result<()> {
 /// Create a new agent in a project. The agent's `state` defaults to
 /// 'idle' and `plan_json` defaults to '[]'. `parent_agent_id` is
 /// optional; when `Some`, the parent must exist in the same project.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_create_agent(
     project_id: i32,
     objective: String,
@@ -250,7 +251,7 @@ pub fn pm_create_agent(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_agent(profile_id: i32, agent_id: i32) -> Result<PmAgent> {
     let _ = valid_profile_id(profile_id)?;
     let agent_id = valid_id(agent_id, "agent_id")?;
@@ -302,7 +303,7 @@ pub fn pm_get_agent(profile_id: i32, agent_id: i32) -> Result<PmAgent> {
 
 /// Update an agent's state, plan, and token counters in one call. Used
 /// by the main-process agent loop at the end of every model/tool step.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_update_agent(
     profile_id: i32,
     agent_id: i32,
@@ -333,7 +334,7 @@ pub fn pm_update_agent(
 }
 
 /// Mark an agent as finished. Sets state and finished_at atomically.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_finish_agent(profile_id: i32, agent_id: i32, state: String) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let agent_id = valid_id(agent_id, "agent_id")?;
@@ -356,7 +357,7 @@ pub fn pm_finish_agent(profile_id: i32, agent_id: i32, state: String) -> Result<
     Ok(())
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_agents(profile_id: i32, project_id: i32) -> Result<Vec<PmAgent>> {
     let profile_id = valid_profile_id(profile_id)?;
     let project_id = valid_id(project_id, "project_id")?;
@@ -401,7 +402,7 @@ pub fn pm_list_agents(profile_id: i32, project_id: i32) -> Result<Vec<PmAgent>> 
 /// Ownership is gated through the project chain (parent and children
 /// must both belong to projects owned by the caller). Ordering is
 /// newest-first by creation time, like `pm_list_agents`.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_children(profile_id: i32, parent_agent_id: i32) -> Result<Vec<PmAgent>> {
     let profile_id = valid_profile_id(profile_id)?;
     let parent_agent_id = valid_id(parent_agent_id, "parent_agent_id")?;
@@ -462,7 +463,7 @@ pub fn pm_get_children(profile_id: i32, parent_agent_id: i32) -> Result<Vec<PmAg
 /// gated through the project chain: both the child and the parent
 /// must belong to projects owned by `profile_id`. Pass `parent_agent_id
 /// = 0` to clear the link (the column is then set to NULL).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_set_parent(profile_id: i32, agent_id: i32, parent_agent_id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let agent_id = valid_id(agent_id, "agent_id")?;
@@ -559,7 +560,7 @@ pub fn pm_set_parent(profile_id: i32, agent_id: i32, parent_agent_id: i32) -> Re
 /// Append a message to an agent's transcript. `seq` is auto-computed as
 /// the next available integer for the agent. `payload_json` is optional
 /// (used by tool_call, tool_result, error, status).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_append_message(
     profile_id: i32,
     agent_id: i32,
@@ -610,7 +611,7 @@ pub fn pm_append_message(
 /// When `before` is null the newest `limit` messages are returned.
 /// Ordered newest-first (seq DESC) so the UI can display a natural
 /// scrollback without re-fetching the whole transcript.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_messages_paginated(
     profile_id: i32,
     agent_id: i32,
@@ -712,7 +713,7 @@ pub fn pm_list_messages_paginated(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_messages(profile_id: i32, agent_id: i32) -> Result<Vec<PmMessage>> {
     let profile_id = valid_profile_id(profile_id)?;
     let agent_id = valid_id(agent_id, "agent_id")?;
@@ -772,7 +773,7 @@ pub fn pm_list_messages(profile_id: i32, agent_id: i32) -> Result<Vec<PmMessage>
 /// loop's outer catch, or `max-steps-exceeded` without a preceding
 /// status row) is still returned with empty `error_message` /
 /// `error_payload` Ã¢â‚¬â€ the UI can render a "(no detail)" placeholder.
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FailedAgentRun {
     pub id: i32,
     pub project_id: i32,
@@ -789,7 +790,7 @@ pub struct FailedAgentRun {
     pub error_ts: Option<String>,
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_failed_agent_runs(
     profile_id: i32,
     since: Option<String>,
@@ -913,7 +914,7 @@ pub(crate) fn assert_agent_owned_by(
 // a project owned by the caller's profile). Telemetry rows survive
 // their referent Ã¢â‚¬â€ there is no FK to pm_agents.
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SubagentRun {
     pub id: i32,
     pub parent_agent_id: i32,
@@ -938,7 +939,7 @@ const MAX_SUBAGENT_ERROR: usize = 2_000;
 /// owned by `profile_id` (ownership-gated). `role`, `child_agent_id`
 /// and `run_id` are optional. The row is left with `ended_at`/`outcome`
 /// NULL Ã¢â‚¬â€ the matching `pm_end_subagent_run` call closes it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_insert_subagent_run(
     profile_id: i32,
     parent_agent_id: i32,
@@ -991,7 +992,7 @@ pub fn pm_insert_subagent_run(
 /// `tokens_in`, `tokens_out`, and `error`. Refuses to update a row
 /// that is already terminal (a defence against double-end races where
 /// two paths each think they are the closer).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_end_subagent_run(
     profile_id: i32,
     id: i32,
@@ -1059,7 +1060,7 @@ pub fn pm_end_subagent_run(
 /// `started_at DESC, id DESC` (the same order the index supports).
 /// `limit` is clamped to [1, 1000] so a UI bug can't pull the entire
 /// table.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_subagent_runs(
     profile_id: i32,
     parent_agent_id: Option<i32>,
@@ -1121,7 +1122,7 @@ pub fn pm_list_subagent_runs(
 /// Get the default provider for a project. Returns the provider ID string
 /// (e.g., "openai-compatible", "mock"), or null if not set (defaults to
 /// "openai-compatible").
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_default_provider(profile_id: i32, project_id: i32) -> Result<Option<String>> {
     let profile_id = valid_profile_id(profile_id)?;
     let project_id = valid_id(project_id, "project_id")?;
@@ -1160,7 +1161,7 @@ pub fn pm_get_default_provider(profile_id: i32, project_id: i32) -> Result<Optio
 
 /// Set the default provider for a project.
 /// provider_id should be one of: "openai-compatible", "mock"
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_set_default_provider(
     profile_id: i32,
     project_id: i32,
@@ -1218,7 +1219,7 @@ pub fn pm_set_default_provider(
 /// project the profile owns. Each `pm_agents` row is one agent run; this
 /// gives the history panel a single bounded call instead of fan-out over
 /// `pm_list_agents` per project. `limit` is clamped to [1, 1000].
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct AgentRunSummary {
     pub id: i32,
     pub project_id: i32,
@@ -1231,7 +1232,7 @@ pub struct AgentRunSummary {
     pub updated_at: String,
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_recent_agent_runs(
     profile_id: i32,
     limit: Option<i32>,
@@ -1296,7 +1297,7 @@ pub fn pm_list_recent_agent_runs(
 const MAX_PLAN_TEMPLATE_JSON: usize = 200_000;
 const MAX_PLAN_TEMPLATE_DESC: usize = 100_000;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmPlanTemplate {
     pub id: i32,
     pub profile_id: i32,
@@ -1346,7 +1347,7 @@ fn count_plan_steps(plan_json: &str) -> Result<i32> {
 /// `name` must be non-empty and unique per profile; the SQL UNIQUE
 /// constraint is the authoritative guard, but we also reject empty /
 /// over-long names at the boundary so the renderer gets a clear message.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_save_plan_template(
     profile_id: i32,
     name: String,
@@ -1402,7 +1403,7 @@ pub fn pm_save_plan_template(
 /// List plan templates for the given profile, newest-first. Returns one
 /// row per saved template; step_count is the denormalised number of steps
 /// at save time so the renderer can render the table without re-parsing.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_plan_templates(profile_id: i32) -> Result<Vec<PmPlanTemplate>> {
     let profile_id = valid_profile_id(profile_id)?;
     with_db(|conn| {
@@ -1442,7 +1443,7 @@ pub fn pm_list_plan_templates(profile_id: i32) -> Result<Vec<PmPlanTemplate>> {
 /// name-based lookup is offered as a convenience so the UI can route by
 /// `name` without first listing the table. Both lookup paths enforce
 /// profile ownership at the SQL boundary.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_load_plan_template(
     profile_id: i32,
     template_id: Option<i32>,
@@ -1523,7 +1524,7 @@ pub fn pm_load_plan_template(
 /// profile's templates by guessing ids. Returns `NOT_OWNED` when no row
 /// matched Ã¢â‚¬â€ i.e. the template does not exist in this profile Ã¢â‚¬â€ so the
 /// UI can surface a clear message rather than a raw constraint error.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_delete_plan_template(profile_id: i32, template_id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let template_id = valid_id(template_id, "template_id")?;

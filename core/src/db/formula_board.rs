@@ -4,6 +4,7 @@
 //! by category and subject for quick reference during study sessions.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -11,7 +12,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::{required_text, text, valid_id, MAX_CATEGORY, MAX_NAME, MAX_TEXT};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Formula {
     pub id: i32,
     pub subject_id: i32,
@@ -24,7 +25,7 @@ pub struct Formula {
 /// Add a formula. `profile_id` is the caller's profile; the subject must
 /// belong to it. A renderer that supplies another profile's subject_id
 /// is rejected at the boundary, not via a post-hoc FK violation.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_formula(
     profile_id: i32,
     subject_id: i32,
@@ -48,7 +49,7 @@ pub fn add_formula(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_formulas(
     profile_id: i32,
     subject_id: Option<i32>,
@@ -107,7 +108,7 @@ pub fn get_formulas(
 
 /// Update a formula. `profile_id` is the caller's profile; the row's
 /// subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_formula(
     profile_id: i32,
     id: i32,
@@ -142,7 +143,7 @@ pub fn update_formula(
 }
 
 /// Delete a formula. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_formula(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;

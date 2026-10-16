@@ -2,6 +2,7 @@
 //! Deliberately separate from subject-attached academic resources and Donut shortcuts.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::params;
 
@@ -11,7 +12,7 @@ use crate::validate::{required_text, valid_id, MAX_NAME, MAX_URL};
 
 const MAX_PASSAGE: usize = 8_000;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ResearchSource {
     pub id: i32,
     pub profile_id: i32,
@@ -23,7 +24,7 @@ pub struct ResearchSource {
     pub kept_count: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ResearchCapture {
     pub id: i32,
     pub profile_id: i32,
@@ -70,7 +71,7 @@ fn source_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ResearchSource> 
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn save_research_source(profile_id: i32, url: String, title: String) -> Result<ResearchSource> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let title = required_text(title, "title", MAX_NAME)?;
@@ -89,7 +90,7 @@ pub fn save_research_source(profile_id: i32, url: String, title: String) -> Resu
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn list_research_sources(profile_id: i32) -> Result<Vec<ResearchSource>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     with_db(|conn| {
@@ -99,7 +100,7 @@ pub fn list_research_sources(profile_id: i32) -> Result<Vec<ResearchSource>> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn list_research_captures(profile_id: i32) -> Result<Vec<ResearchCapture>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     with_db(|conn| {
@@ -109,14 +110,14 @@ pub fn list_research_captures(profile_id: i32) -> Result<Vec<ResearchCapture>> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn count_kept_research_passages(profile_id: i32, url: String) -> Result<i32> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let (canonical, _, _) = canonical_research_url(&url)?;
     with_db(|conn| conn.query_row("SELECT COUNT(*) FROM research_captures c JOIN research_sources s ON s.id=c.source_id WHERE c.profile_id=?1 AND s.canonical_url=?2 AND c.kind IN ('clip','highlight')", params![profile_id, canonical], |r| r.get(0)).map_err(to_err))
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn capture_research_passage(profile_id: i32, url: String, title: String, page_id: Option<String>, kind: String, text: String) -> Result<ResearchCapture> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let title = required_text(title, "title", MAX_NAME)?;

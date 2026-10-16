@@ -13,6 +13,7 @@
 //! reads return 0 rows.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -71,7 +72,7 @@ fn is_valid_transition(from: &str, to: &str) -> bool {
     )
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmGoal {
     pub id: i32,
     pub profile_id: i32,
@@ -92,7 +93,7 @@ pub struct PmGoal {
     pub completed_at: Option<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct PmGoalEvent {
     pub id: i32,
     pub goal_id: i32,
@@ -141,7 +142,7 @@ fn assert_project_owned_by(conn: &Connection, profile_id: i32, project_id: i32) 
 /// Create a new goal. The goal starts in `state='created'` and has no
 /// linked agent yet — the goal engine (shell side) will create the
 /// linked agent and transition the state to `starting`/`running`.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_create_goal(
     profile_id: i32,
     project_id: i32,
@@ -211,7 +212,7 @@ pub fn pm_create_goal(
 }
 
 /// Fetch a single goal by id. Ownership is gated through profile_id.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_goal(profile_id: i32, goal_id: i32) -> Result<PmGoal> {
     let profile_id = valid_profile_id(profile_id)?;
     let goal_id = valid_id(goal_id, "goal_id")?;
@@ -257,7 +258,7 @@ pub fn pm_get_goal(profile_id: i32, goal_id: i32) -> Result<PmGoal> {
 
 /// List goals for a profile, newest-first. `state` is an optional filter
 /// (e.g. 'running', 'completed'). `limit` is clamped to [1, 500].
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_goals(
     profile_id: i32,
     state: Option<String>,
@@ -328,7 +329,7 @@ pub fn pm_list_goals(
 /// Delete a goal. Cancellations and failures stay in the table for the
 /// audit log; this is a hard delete and is intended for the UI's "remove
 /// from list" affordance.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_delete_goal(profile_id: i32, goal_id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let goal_id = valid_id(goal_id, "goal_id")?;
@@ -370,7 +371,7 @@ pub fn pm_delete_goal(profile_id: i32, goal_id: i32) -> Result<()> {
 ///   * Appends a `state_changed` event to `pm_goal_events`.
 ///   * Writes `failure_reason` if supplied and state is `failed`.
 ///   * Writes `result_text` if supplied and state is `completed`.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_transition_goal(
     profile_id: i32,
     goal_id: i32,
@@ -465,7 +466,7 @@ pub fn pm_transition_goal(
 /// Link a goal to its driving agent row. The agent must belong to a
 /// project owned by `profile_id` AND the goal's project must match the
 /// agent's project (no cross-project linking).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_link_goal_agent(profile_id: i32, goal_id: i32, agent_id: i32) -> Result<()> {
     let profile_id = valid_profile_id(profile_id)?;
     let goal_id = valid_id(goal_id, "goal_id")?;
@@ -519,7 +520,7 @@ pub fn pm_link_goal_agent(profile_id: i32, goal_id: i32, agent_id: i32) -> Resul
 /// Update the cached plan-step count. The goal engine calls this when it
 /// reads the linked agent's plan; UI panels use the cached value to
 /// avoid re-joining every render.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_update_goal_plan_step_count(
     profile_id: i32,
     goal_id: i32,
@@ -552,7 +553,7 @@ pub fn pm_update_goal_plan_step_count(
 /// engine uses this for progress breadcrumbs ("verifying", "fix-retry N",
 /// etc.). Other event kinds should go through `pm_transition_goal` or
 /// `pm_link_goal_agent` so the state stays consistent.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_append_goal_event(
     profile_id: i32,
     goal_id: i32,
@@ -576,7 +577,7 @@ pub fn pm_append_goal_event(
 }
 
 /// List timeline events for a goal, newest-first. `limit` clamped [1,200].
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_list_goal_events(
     profile_id: i32,
     goal_id: i32,
@@ -628,7 +629,7 @@ pub fn pm_list_goal_events(
 /// Resolve the linked agent row id for a goal, if any. Used by the UI to
 /// jump straight from the goal detail view to the existing Project Mode
 /// agent transcript (which is the detailed execution view).
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn pm_get_goal_agent_id(profile_id: i32, goal_id: i32) -> Result<Option<i32>> {
     let profile_id = valid_profile_id(profile_id)?;
     let goal_id = valid_id(goal_id, "goal_id")?;

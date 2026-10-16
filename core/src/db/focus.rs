@@ -1,6 +1,7 @@
 //! Focus Curtain: Study mode settings.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::params;
 
@@ -8,7 +9,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::valid_id;
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct FocusSettings {
     pub id: i32,
     pub profile_id: i32,
@@ -19,7 +20,7 @@ pub struct FocusSettings {
 
 // ===== Focus Curtain =====
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_focus_settings(profile_id: i32) -> Result<Option<FocusSettings>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     with_db(|conn| {
@@ -50,7 +51,7 @@ pub fn get_focus_settings(profile_id: i32) -> Result<Option<FocusSettings>> {
 /// Insert or update focus settings for `profile_id`. The profile must
 /// already exist; we verify before writing so a renderer compromise
 /// cannot plant rows against a non-existent (or another user's) profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_focus_settings(
     profile_id: i32,
     is_enabled: bool,

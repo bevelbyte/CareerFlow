@@ -5,6 +5,7 @@
 //! Here we read/write rows and hand them to the domain calculator.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection, OptionalExtension};
 
@@ -12,7 +13,7 @@ use crate::cgpa::{weighted_gpa, CourseInput, GradeBand, GradeScale};
 use crate::db::{to_err, with_db, with_transaction};
 use crate::errors::{coded, codes};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Course {
     pub id: i32,
     pub profile_id: i32,
@@ -31,14 +32,14 @@ pub struct Course {
     pub subject_id: Option<i32>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct GradeBandDto {
     pub min_percent: f64,
     pub grade_point: f64,
     pub label: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SgpaResult {
     pub sgpa: f64,
     pub total_credits: f64,
@@ -46,14 +47,14 @@ pub struct SgpaResult {
     pub graded_count: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterSgpa {
     pub label: String,
     pub sgpa: f64,
     pub credits: f64,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct CgpaResult {
     pub cgpa: f64,
     pub total_credits: f64,
@@ -154,7 +155,7 @@ pub(crate) fn scale_for(conn: &Connection, profile_id: i32) -> Result<GradeScale
 
 /// Effective grade scale for a profile (stored bands, or the default seed if
 /// none has been saved). Lets the UI render the scale it is calculating with.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_grade_scale(profile_id: i32) -> Result<Vec<GradeBandDto>> {
     with_db(|conn| {
         let bands = load_bands(conn, profile_id)?;
@@ -167,12 +168,12 @@ pub fn get_grade_scale(profile_id: i32) -> Result<Vec<GradeBandDto>> {
 }
 
 /// The built-in default scale (data, not hardcoded UI). Used by "restore default".
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_default_grade_scale() -> Vec<GradeBandDto> {
     default_bands()
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct GradeScaleValidation {
     pub valid: bool,
     pub error: Option<String>,
@@ -180,7 +181,7 @@ pub struct GradeScaleValidation {
 
 /// Validate a candidate scale WITHOUT persisting. The UI calls this so its
 /// checks are the authoritative Rust rules, not independently reinvented.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn validate_grade_scale(bands: Vec<GradeBandDto>) -> GradeScaleValidation {
     let scale = GradeScale {
         bands: bands
@@ -207,7 +208,7 @@ pub fn validate_grade_scale(bands: Vec<GradeBandDto>) -> GradeScaleValidation {
 /// Replace a profile's grade scale wholesale. The scale is validated against
 /// the domain rules (see `GradeScale::validate`) and rejected with a coded
 /// error if invalid, so an inconsistent scale can never reach SQLite.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_grade_scale(profile_id: i32, bands: Vec<GradeBandDto>) -> Result<()> {
     let scale = GradeScale {
         bands: bands
@@ -292,7 +293,7 @@ fn validate_course_subject(conn: &Connection, profile_id: i32, subject_id: i32) 
     }
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 #[allow(clippy::too_many_arguments)]
 pub fn add_course(
     profile_id: i32,
@@ -324,7 +325,7 @@ pub fn add_course(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_courses(profile_id: i32, semester_label: Option<String>) -> Result<Vec<Course>> {
     with_db(|conn| {
         let mut query = "SELECT id, profile_id, semester_label, course_name, credits, grade, grade_points, marks_obtained, max_marks, is_hypothetical, created_at, subject_id FROM courses WHERE profile_id = ?1".to_string();
@@ -371,7 +372,7 @@ pub fn get_courses(profile_id: i32, semester_label: Option<String>) -> Result<Ve
 /// `profile_id` is the caller's profile. The function refuses to write if
 /// the row does not belong to that profile — a renderer compromise cannot
 /// patch or delete another profile's courses.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 #[allow(clippy::too_many_arguments)]
 pub fn update_course(
     profile_id: i32,
@@ -422,7 +423,7 @@ pub fn update_course(
 
 /// Delete a course. `profile_id` is the caller's profile; the function
 /// refuses to delete rows owned by another profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_course(profile_id: i32, id: i32) -> Result<()> {
     with_db(|conn| {
         let n = conn
@@ -475,7 +476,7 @@ fn course_inputs(
     Ok(out)
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn calculate_sgpa(profile_id: i32, semester_label: String) -> Result<SgpaResult> {
     with_db(|conn| {
         let scale = scale_for(conn, profile_id)?;
@@ -493,7 +494,7 @@ pub fn calculate_sgpa(profile_id: i32, semester_label: String) -> Result<SgpaRes
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn calculate_cgpa(profile_id: i32) -> Result<CgpaResult> {
     with_db(|conn| {
         let scale = scale_for(conn, profile_id)?;

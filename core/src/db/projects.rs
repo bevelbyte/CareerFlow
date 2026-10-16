@@ -4,6 +4,7 @@
 //! tracking mini-projects, major capstone projects, and other academic work.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -14,7 +15,7 @@ use crate::validate::{
     MAX_NAME, MAX_TAG, MAX_TEXT,
 };
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Project {
     pub id: i32,
     pub profile_id: i32,
@@ -26,7 +27,7 @@ pub struct Project {
     pub created_at: String,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ProjectTask {
     pub id: i32,
     pub project_id: i32,
@@ -39,7 +40,7 @@ pub struct ProjectTask {
     pub created_at: String,
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_project(
     profile_id: i32,
     name: String,
@@ -62,7 +63,7 @@ pub fn add_project(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_projects(profile_id: i32) -> Result<Vec<Project>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -92,7 +93,7 @@ pub fn get_projects(profile_id: i32) -> Result<Vec<Project>> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_project(
     profile_id: i32,
     id: i32,
@@ -121,7 +122,7 @@ pub fn update_project(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_project(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -139,7 +140,7 @@ pub fn delete_project(profile_id: i32, id: i32) -> Result<()> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_project_task(
     profile_id: i32,
     project_id: i32,
@@ -166,7 +167,7 @@ pub fn add_project_task(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_project_tasks(profile_id: i32, project_id: i32) -> Result<Vec<ProjectTask>> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let project_id = valid_id(project_id, "project_id")?;
@@ -200,7 +201,7 @@ pub fn get_project_tasks(profile_id: i32, project_id: i32) -> Result<Vec<Project
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_project_task(
     profile_id: i32,
     id: i32,
@@ -245,7 +246,7 @@ pub fn update_project_task(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_project_task(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;

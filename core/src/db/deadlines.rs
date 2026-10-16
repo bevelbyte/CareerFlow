@@ -4,6 +4,7 @@
 //! stay on track with their study schedule.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -11,7 +12,7 @@ use crate::db::{to_err, with_db};
 use crate::errors::{coded, codes};
 use crate::validate::{required_text, text, valid_id, MAX_CATEGORY, MAX_NAME, MAX_TAG, MAX_TEXT};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Deadline {
     pub id: i32,
     pub subject_id: i32,
@@ -26,7 +27,7 @@ pub struct Deadline {
     pub completed_at: Option<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct DeadlinePace {
     pub days_remaining: i32,
     pub topics_remaining: i32,
@@ -36,7 +37,7 @@ pub struct DeadlinePace {
 
 /// Add a deadline. `profile_id` is the caller's profile; the subject must
 /// belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn add_deadline(
     profile_id: i32,
     subject_id: i32,
@@ -63,7 +64,7 @@ pub fn add_deadline(
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_deadlines(profile_id: i32) -> Result<Vec<Deadline>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -105,7 +106,7 @@ pub fn get_deadlines(profile_id: i32) -> Result<Vec<Deadline>> {
 
 /// Update a deadline. `profile_id` is the caller's profile; the row's
 /// subject must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_deadline(
     profile_id: i32,
     id: i32,
@@ -145,7 +146,7 @@ pub fn update_deadline(
 }
 
 /// Delete a deadline. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_deadline(profile_id: i32, id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -175,7 +176,7 @@ pub fn delete_deadline(profile_id: i32, id: i32) -> Result<()> {
 /// Set or clear a deadline's completion. `completed = true` stamps
 /// `completed_at` with the current local datetime; `false` clears it (reopen).
 /// `profile_id` is the caller's profile; the row must belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn set_deadline_completion(profile_id: i32, id: i32, completed: bool) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let row_id = valid_id(id, "id")?;
@@ -243,7 +244,7 @@ fn assert_deadline_subject_owned_by(
 
 /// Calculate pace for a deadline: how many topics need to be covered per day.
 /// Topics remaining = subjects with status != 'done' in the same milestone.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn calculate_deadline_pace(profile_id: i32, deadline_id: i32) -> Result<DeadlinePace> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let deadline_id = valid_id(deadline_id, "deadline_id")?;
@@ -317,7 +318,7 @@ pub fn calculate_deadline_pace(profile_id: i32, deadline_id: i32) -> Result<Dead
     })
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct DeadlinePaceRow {
     pub deadline_id: i32,
     pub days_remaining: i32,
@@ -329,7 +330,7 @@ pub struct DeadlinePaceRow {
 /// Pace for EVERY active (non-completed) deadline of a profile in one query —
 /// replaces the Radar's per-deadline IPC fan-out. Overdue deadlines report
 /// negative days_remaining and is_overdue = true.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_deadline_paces(profile_id: i32) -> Result<Vec<DeadlinePaceRow>> {
     with_db(|conn| {
         let mut stmt = conn.prepare(

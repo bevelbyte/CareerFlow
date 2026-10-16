@@ -4,6 +4,7 @@
 //! helping students memorize formulas, derivations, and key concepts efficiently.
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection};
 
@@ -26,7 +27,7 @@ fn today_date() -> String {
     }
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct Card {
     pub id: i32,
     pub subject_id: i32,
@@ -41,7 +42,7 @@ pub struct Card {
     pub last_reviewed: Option<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ReviewStats {
     pub due_today: i32,
     pub reviewed_today: i32,
@@ -53,7 +54,7 @@ pub struct ReviewStats {
 /// `profile_id` is the caller's profile; we verify the subject belongs to
 /// it before writing, so a renderer compromise cannot create cards in
 /// another profile's subjects.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn create_card(profile_id: i32, subject_id: i32, front: String, back: String) -> Result<i32> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let subject_id = valid_id(subject_id, "subject_id")?;
@@ -94,7 +95,7 @@ pub fn create_card(profile_id: i32, subject_id: i32, front: String, back: String
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_due_cards(profile_id: i32) -> Result<Vec<Card>> {
     with_db(|conn| {
         let today = today_date();
@@ -137,7 +138,7 @@ pub fn get_due_cards(profile_id: i32) -> Result<Vec<Card>> {
     })
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_all_cards(profile_id: i32) -> Result<Vec<Card>> {
     with_db(|conn| {
         let mut stmt = conn
@@ -180,7 +181,7 @@ pub fn get_all_cards(profile_id: i32) -> Result<Vec<Card>> {
 
 /// Review a card (SM-2 update). `profile_id` is the caller's profile; the
 /// function refuses to update cards owned by another profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn review_card(profile_id: i32, card_id: i32, quality: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let card_id = valid_id(card_id, "card_id")?;
@@ -226,7 +227,7 @@ pub fn review_card(profile_id: i32, card_id: i32, quality: i32) -> Result<()> {
 
 /// Update a card's subject/front/back. `profile_id` is the caller's
 /// profile; the card AND the destination subject must both belong to it.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn update_card(
     profile_id: i32,
     card_id: i32,
@@ -263,7 +264,7 @@ pub fn update_card(
 }
 
 /// Delete a card. `profile_id` is the caller's profile.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn delete_card(profile_id: i32, card_id: i32) -> Result<()> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let card_id = valid_id(card_id, "card_id")?;
@@ -330,7 +331,7 @@ fn assert_subject_owned_by(conn: &Connection, profile_id: i32, subject_id: i32) 
     Ok(())
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_review_stats(profile_id: i32) -> Result<ReviewStats> {
     with_db(|conn| {
         let today = today_date();

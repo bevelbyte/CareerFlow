@@ -24,7 +24,7 @@
     "check:cdp-boundary": "node scripts/check-cdp-auth-boundary.mjs",
     "dist": "npm run build && electron-builder --config electron-builder.yml --win",
     "dist:dir": "npm run build && electron-builder --config electron-builder.yml --dir",
-    "test:core": "cargo test --manifest-path core/Cargo.toml -- --test-threads=1",
+    "test:core": "cargo test --manifest-path core/Cargo.toml --no-default-features -- --test-threads=1",
     "test:ui": "npm run test -w @careerflow/ui",
     "test:e2e": "playwright test",
     "test:e2e:batched": "node scripts/run-e2e-batched.mjs",

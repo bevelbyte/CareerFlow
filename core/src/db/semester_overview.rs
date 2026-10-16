@@ -19,6 +19,7 @@
 use std::collections::HashMap;
 
 use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::params;
 
@@ -28,14 +29,14 @@ use crate::validate::valid_id;
 use crate::db::courses::scale_for;
 use crate::db::{to_err, with_db};
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterAcademic {
     pub sgpa: f64,
     pub graded_credits: f64,
     pub graded_course_count: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterCompletion {
     pub total_subjects: i32,
     pub graded_subjects: i32,
@@ -44,14 +45,14 @@ pub struct SemesterCompletion {
     pub pending_subjects: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterStudy {
     pub total_minutes: i32,
     pub session_count: i32,
     pub minutes_last7: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterDeadlines {
     pub overdue: i32,
     pub due_soon: i32, // today..=+7 days (local)
@@ -61,7 +62,7 @@ pub struct SemesterDeadlines {
     pub next_subject_id: Option<i32>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterSubject {
     pub subject_id: i32,
     pub name: String,
@@ -76,7 +77,7 @@ pub struct SemesterSubject {
     pub attention: Vec<String>,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct SemesterOverview {
     pub semester_id: i32,
     pub name: String,
@@ -90,7 +91,7 @@ pub struct SemesterOverview {
 }
 
 /// Assemble the semester progress overview. Bounded queries only.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn get_semester_overview(profile_id: i32, semester_id: i32) -> Result<SemesterOverview> {
     let profile_id = valid_id(profile_id, "profile_id")?;
     let semester_id = valid_id(semester_id, "semester_id")?;

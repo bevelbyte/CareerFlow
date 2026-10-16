@@ -30,15 +30,21 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use napi::bindgen_prelude::*;
+#[cfg(feature = "node")]
+use napi::bindgen_prelude::AsyncTask;
+use napi::bindgen_prelude::Result;
+#[cfg(feature = "node")]
 use napi::Task;
+#[cfg(feature = "node")]
 use napi_derive::napi;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{json, Value};
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 
-use crate::db::{attach_root, to_err as toe, with_db};
+use crate::db::to_err as toe;
+#[cfg(feature = "node")]
+use crate::db::{attach_root, with_db};
 use crate::errors::{coded, codes};
 
 struct AtomicOutput {
@@ -172,11 +178,13 @@ fn manifest_version(manifest: &Value) -> Result<i64> {
 
 // ============================ EXPORT ============================
 
+#[cfg(feature = "node")]
 pub struct ExportTask {
     pub profile_id: i32,
     pub out_path: String,
 }
 
+#[cfg(feature = "node")]
 impl Task for ExportTask {
     type Output = String;
     type JsValue = String;
@@ -772,7 +780,7 @@ pub fn export_profile_conn(
 
 // ============================ IMPORT ============================
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct ImportResult {
     pub profile_id: i32,
     pub name: String,
@@ -780,7 +788,7 @@ pub struct ImportResult {
     pub resource_count: i32,
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct BundleInfo {
     pub name: String,
     pub slug: String,
@@ -849,7 +857,7 @@ fn read_bundle(bundle_path: &str) -> Result<(Value, HashMap<String, Vec<u8>>)> {
     Ok((manifest, attachments))
 }
 
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn inspect_profile_bundle(bundle_path: String) -> Result<BundleInfo> {
     let (manifest, _) = read_bundle(&bundle_path)?;
     Ok(BundleInfo {
@@ -895,10 +903,12 @@ struct PendingAttachment {
     bytes: Vec<u8>,
 }
 
+#[cfg(feature = "node")]
 pub struct ImportTask {
     pub bundle_path: String,
 }
 
+#[cfg(feature = "node")]
 impl Task for ImportTask {
     type Output = ImportResult;
     type JsValue = ImportResult;
@@ -1701,7 +1711,8 @@ fn now_iso(conn: &rusqlite::Connection) -> String {
 }
 
 /// Export a profile and everything under it to a portable `.cfprofile` bundle.
-#[napi]
+#[cfg(feature = "node")]
+#[cfg_attr(feature = "node", napi)]
 pub fn export_profile(profile_id: i32, out_path: String) -> AsyncTask<ExportTask> {
     AsyncTask::new(ExportTask {
         profile_id,
@@ -1711,7 +1722,8 @@ pub fn export_profile(profile_id: i32, out_path: String) -> AsyncTask<ExportTask
 
 /// Import a `.cfprofile` bundle, recreating the profile + all data. Slug
 /// collisions are auto-resolved by suffixing.
-#[napi]
+#[cfg(feature = "node")]
+#[cfg_attr(feature = "node", napi)]
 pub fn import_profile(bundle_path: String) -> AsyncTask<ImportTask> {
     AsyncTask::new(ImportTask { bundle_path })
 }

@@ -182,7 +182,7 @@ pub(crate) fn with_immediate_transaction<T>(
 
 /// Open (or create) the SQLite file at `db_path` and ensure the schema exists.
 /// `db_path` is supplied by Electron from app.getPath('userData').
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn init_db(db_path: String) -> Result<()> {
     let conn = Connection::open(&db_path).map_err(|e| {
         coded(
@@ -259,7 +259,7 @@ pub fn init_db(db_path: String) -> Result<()> {
     Ok(())
 }
 
-#[napi(object)]
+#[cfg_attr(feature = "node", napi(object))]
 pub struct VerifyDbResult {
     pub success: bool,
     pub message: String,
@@ -268,7 +268,7 @@ pub struct VerifyDbResult {
 /// Flush a legacy SQLite WAL into the main database file before a filesystem
 /// migration copies it. A migration that copies only `careerflow.db` while a
 /// committed write still lives in `careerflow.db-wal` silently loses data.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn checkpoint_db(db_path: String) -> Result<()> {
     let conn = Connection::open(&db_path).map_err(|e| {
         coded(
@@ -290,7 +290,7 @@ pub fn checkpoint_db(db_path: String) -> Result<()> {
 }
 
 /// Verify the SQLite database integrity at the given path.
-#[napi]
+#[cfg_attr(feature = "node", napi)]
 pub fn verify_db(db_path: String) -> VerifyDbResult {
     let conn = match Connection::open(&db_path) {
         Ok(c) => c,

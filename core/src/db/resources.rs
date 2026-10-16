@@ -62,10 +62,10 @@ fn resolve_file_path(rel: &Option<String>, legacy: &Option<String>) -> Option<St
     legacy.clone()
 }
 
-fn is_reparse_point(meta: &std::fs::Metadata) -> bool {
+fn is_reparse_point(_meta: &std::fs::Metadata) -> bool {
     #[cfg(windows)]
     {
-        return meta.file_attributes() & 0x0400 != 0;
+        return _meta.file_attributes() & 0x0400 != 0;
     }
     #[cfg(not(windows))]
     {

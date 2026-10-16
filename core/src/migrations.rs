@@ -62,11 +62,6 @@ const MIGRATIONS: &[(i32, &str)] = &[
     (24, include_str!("../migrations/024_research_sources_captures.sql")),
 ];
 
-/// Latest schema version this binary knows about.
-pub fn target_version() -> i32 {
-    MIGRATIONS.last().map(|(v, _)| *v).unwrap_or(0)
-}
-
 /// Read the DB's current schema version.
 pub fn current_version(conn: &Connection) -> Result<i32> {
     conn.query_row("PRAGMA user_version", [], |r| r.get(0))
